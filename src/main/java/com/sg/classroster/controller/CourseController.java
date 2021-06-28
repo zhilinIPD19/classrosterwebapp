@@ -36,9 +36,18 @@ public class CourseController {
     @Autowired
     CourseDao courseDao;
 
+    //in order to clear the error message when refresh the page
+    Boolean isDefault = true;
     //add a class variable to hold the set of ConstraintViolations from our Validator
     Set<ConstraintViolation<Course>> violations = new HashSet<>();
-    Boolean noStudent = false;
+    //In order to show the error message that show that no student has been chosen
+    Boolean isWithoutStudent = false;
+
+    /**
+     *
+     * @param model an object where we can put any data we want to render on the page.
+     * @return String
+     */
     @GetMapping("courses")
     public String displayCourses(Model model) {
         List<Course> courses = courseDao.getAllCourses();
@@ -47,12 +56,27 @@ public class CourseController {
         model.addAttribute("courses", courses);
         model.addAttribute("teachers", teachers);
         model.addAttribute("students", students);
-        model.addAttribute("noStudent",noStudent);
+        //if it is refresh pages, need to clear the error messages ahead
+        if(isDefault){
+            violations.clear();
+            isWithoutStudent = false;
+        }
+        model.addAttribute("isWithoutStudent", isWithoutStudent);
         // violations variable is added to the Model for the main page.
         model.addAttribute("errors", violations);
+        //always reset isDefault to true after error message showed
+        isDefault = true;
+
         return "courses";
     }
 
+    /**
+     *
+     * @param course course to be add
+     * @param result
+     * @param request
+     * @return
+     */
     @PostMapping("addCourse")
     public String addCourse(@Valid Course course, BindingResult result, HttpServletRequest request) {
         String teacherId = request.getParameter("teacherId");
@@ -66,23 +90,30 @@ public class CourseController {
             for(String studentId : studentIds) {
                 students.add(studentDao.getStudentById(Integer.parseInt(studentId)));
             }
+            isWithoutStudent = false;
         } else {
             //If it's not null, we proceed like normal; but if it is null, we create a new type of object, a FieldError. The BindingResult uses FieldErrors to keep track of which field has errors in our object.
-            noStudent = true;
+            isWithoutStudent = true;
         }
         course.setStudents(students);
 
         Validator validate = Validation.buildDefaultValidatorFactory().getValidator();
         violations = validate.validate(course);
 
-        if(violations.isEmpty() && !noStudent) {
+        if(violations.isEmpty() && !isWithoutStudent) {
             courseDao.addCourse(course);
         }
-       // if(result.hasErrors()) return "courses";
+        isDefault = false;
 
         return "redirect:/courses";
     }
 
+    /**
+     *
+     * @param id id of Course
+     * @param model
+     * @return
+     */
     @GetMapping("courseDetail")
     public String courseDetail(Integer id, Model model) {
         Course course = courseDao.getCourseById(id);
@@ -104,6 +135,16 @@ public class CourseController {
         model.addAttribute("course", course);
         model.addAttribute("students", students);
         model.addAttribute("teachers", teachers);
+        //if it is refresh pages, need to clear the error messages ahead
+        if(isDefault){
+            violations.clear();
+            isWithoutStudent = false;
+        }
+        // violations variable is added to the Model for the main page.
+        model.addAttribute("errors", violations);
+        //always reset isDefault to true after error message showed
+        model.addAttribute("isWithoutStudent", isWithoutStudent&&!isDefault);
+        isDefault = true;
         return "editCourse";
     }
 
@@ -128,13 +169,14 @@ public class CourseController {
             for(String studentId : studentIds) {
                 students.add(studentDao.getStudentById(Integer.parseInt(studentId)));
             }
+            isWithoutStudent = false;
         } else {
             //If it's not null, we proceed like normal; but if it is null, we create a new type of object, a FieldError. The BindingResult uses FieldErrors to keep track of which field has errors in our object.
             FieldError error = new FieldError("course", "students", "Must include one student");
             result.addError(error);
         }
         course.setStudents(students);
-
+        isDefault = false;
         //check if our BindingResult has any errors. If it does, we need to put some data into our Model
         if(result.hasErrors()) {
             model.addAttribute("teachers", teacherDao.getAllTeachers());

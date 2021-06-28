@@ -33,13 +33,21 @@ public class StudentController {
 
     //add a class variable to hold the set of ConstraintViolations from our Validator
     Set<ConstraintViolation<Student>> violations = new HashSet<>();
+    //in order to clear the error message when refresh the page
+    Boolean isDefault = true;
 
     @GetMapping("students")
     public String displayStudents(Model model) {
         List<Student> students= studentDao.getAllStudents();
         model.addAttribute("students", students);
-       // violations variable is added to the Model for the main page.
+        //if it is refresh pages, need to clear the error messages ahead
+        if(isDefault){
+            violations.clear();
+        }
+        // violations variable is added to the Model for the main page.
         model.addAttribute("errors", violations);
+        //always reset isDefault to true after error message showed
+        isDefault = true;
         return "students";
     }
 
@@ -55,6 +63,7 @@ public class StudentController {
         if(violations.isEmpty()) {
             studentDao.addStudent(student);
         }
+        isDefault = false;
         return "redirect:/students";
     }
 
@@ -68,6 +77,14 @@ public class StudentController {
     public String editStudent(Integer id, Model model) {
         Student student = studentDao.getStudentById(id);
         model.addAttribute("student", student);
+        //if it is refresh pages, need to clear the error messages ahead
+        if(isDefault){
+            violations.clear();
+        }
+        // violations variable is added to the Model for the main page.
+        model.addAttribute("errors", violations);
+        //always reset isDefault to true after error message showed
+        isDefault = true;
         return "editStudent";
     }
 
@@ -79,10 +96,12 @@ public class StudentController {
      */
     @PostMapping("editStudent")
     public String performEditStudent(@Valid Student student, BindingResult result) {
+        isDefault = false;
         if(result.hasErrors()) {
             return "editStudent";
         }
         studentDao.updateStudent(student);
+
         return "redirect:/students";
     }
 }

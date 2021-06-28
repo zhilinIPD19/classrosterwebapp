@@ -84,7 +84,7 @@
                                                 + student.lastName}">
                                 Student Name</option>
                         </select>
-                        <div th:if="${noStudent}">
+                        <div th:if="${isWithoutStudent}">
                             <p class="alert alert-danger" text="Must include one student">
                                 Must include one student</p>
                         </div>

@@ -34,19 +34,29 @@ public class TeacherController {
     CourseDao courseDao;
 
     Set<ConstraintViolation<Teacher>> violations = new HashSet<>();
+    //in order to clear the error message when refresh the page
+    Boolean isDefault = true;
 
     @GetMapping("teachers")
     public String displayTeachers(Model model){
         List<Teacher> teacherList = teacherDao.getAllTeachers();
         model.addAttribute("teachers",teacherList);
+        //if it is refresh pages, need to clear the error messages ahead
+        if(isDefault){
+            violations.clear();
+        }
+        // violations variable is added to the Model for the main page.
         model.addAttribute("errors", violations);
+        //always reset isDefault to true after error message showed
+        isDefault = true;
         return "teachers";
     }
 
     @PostMapping("addTeacher")
     public String addTeacher(HttpServletRequest request){
+        isDefault = false;
         String firstName = request.getParameter("firstName");
-        String lastName = request.getParameter("firstName");
+        String lastName = request.getParameter("lastName");
         String specialty = request.getParameter("specialty");
 
         Teacher teacher = new Teacher();
@@ -60,7 +70,6 @@ public class TeacherController {
         if(violations.isEmpty()) {
             teacherDao.addTeacher(teacher);
         }
-
         return "redirect:/teachers";
     }
 
@@ -70,12 +79,17 @@ public class TeacherController {
         Teacher teacher = teacherDao.getTeacherById(id);
 
         model.addAttribute("teacher", teacher);
+        if(isDefault){
+            violations.clear();
+        }
         model.addAttribute("errors", violations);
+        isDefault = true;
         return "editTeacher";
     }
 
     @PostMapping("editTeacher")
     public String performEditTeacher(@Valid Teacher teacher, BindingResult result) {
+        isDefault = false;
         if(result.hasErrors()) {
             return "editTeacher";
         }
