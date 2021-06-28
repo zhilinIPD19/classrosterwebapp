@@ -48,7 +48,7 @@ public class TeacherDaoDB implements TeacherDao{
     }
 
     @Override
-    public void UpdateTeacher(Teacher teacher) {
+    public void updateTeacher(Teacher teacher) {
         final String UPDATE_TEACHER = "UPDATE teacher SET firstName = ?, lastName = ?, " +
                 "specialty = ? WHERE id = ?";
         jdbc.update(UPDATE_TEACHER,
